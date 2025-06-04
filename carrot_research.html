@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Sunscreen Safety Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Terracotta Accent -->
+    <!-- Application Structure Plan: A single-page application designed for task-oriented exploration. The structure uses a top navigation bar to switch between three core sections: 'The Investigation' (analyzing Carrot Sun), 'The Verdict' (detailing health risks), and 'Safe Alternatives' (an interactive comparison dashboard). This non-linear structure is chosen over a simple report layout to empower users to quickly find the information most relevant to them, whether it's understanding the problematic product, learning about the dangers, or immediately finding a safe solution. Key interactions include an 'Ingredient Inspector' to make dense safety data digestible and a filterable product grid to help users select an alternative based on their specific needs (price, skin type, etc.), thereby enhancing usability and engagement. -->
+    <!-- Visualization & Content Choices: The application translates the source report into interactive components. Report Info: Carrot Sun ingredients -> Goal: Inform/Warn -> Viz: Interactive list with expandable details -> Interaction: Click-to-reveal -> Justification: Breaks down complex data, encourages active learning. Report Info: Product price comparison -> Goal: Compare -> Viz: Bar Chart (Chart.js/Canvas) -> Interaction: Hover tooltips -> Justification: Faster visual comparison than a table. Report Info: Safe alternatives database -> Goal: Organize/Recommend -> Viz: Filterable card grid -> Interaction: Click filters to update view -> Justification: User-centric design that helps solve the primary query ("find a suitable product"). Report Info: Health risks -> Goal: Persuade/Educate -> Viz: Icon-driven grid -> Justification: Simplifies complex health warnings into memorable, scannable points. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #3D405B;
+        }
+        .accent-bg { background-color: #E07A5F; }
+        .accent-text { color: #E07A5F; }
+        .accent-border { border-color: #E07A5F; }
+        .secondary-bg { background-color: #F4F1DE; }
+        .nav-link {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            border-bottom-color: #E07A5F;
+            color: #3D405B;
+            font-weight: 600;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .ingredient-detail {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold accent-text">Sun Safety Guide</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a onclick="showSection('investigation')" class="nav-link active">The Investigation</a>
+                        <a onclick="showSection('verdict')" class="nav-link">The Verdict</a>
+                        <a onclick="showSection('alternatives')" class="nav-link">Safe Alternatives</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <select onchange="showSection(this.value)" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        <option value="investigation" selected>The Investigation</option>
+                        <option value="verdict">The Verdict</option>
+                        <option value="alternatives">Safe Alternatives</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <section id="investigation" class="content-section active">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Investigation: Carrot Sun Cream</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">A deep dive into the claims, ingredients, and real-world performance of the popular tan accelerator. This section unpacks what's inside the product to help you understand how it works and whether it's a safe choice for your skin.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <div class="secondary-bg p-6 rounded-lg shadow-md col-span-1 md:col-span-2 lg:col-span-3">
+                    <h3 class="font-bold text-2xl text-center accent-text">Manufacturer's Claims vs. Reality</h3>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="font-semibold text-gray-800">✓ Tan Acceleration</p>
+                            <p class="text-gray-600">Claims to speed up tanning with L-Tyrosine and Carrot Oil. Many users agree it works.</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">✓ Moisturization</p>
+                            <p class="text-gray-600">Contains almond and wheat germ oil for hydration. Users often report soft skin.</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">✓ Enhanced Color</p>
+                            <p class="text-gray-600">Uses Henna for a "golden hue." This is a key ingredient with safety considerations.</p>
+                        </div>
+                        <div class="bg-red-100 border-l-4 border-red-500 p-4 rounded-r-lg">
+                            <p class="font-semibold text-red-800">✗ The "SPF Friendly" Catch</p>
+                            <p class="text-red-700">This term means the product has NO SPF and you must supply your own. This puts the full safety burden on you.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-red-500 text-white p-8 rounded-lg shadow-lg flex flex-col items-center justify-center text-center">
+                    <span class="text-8xl font-black">0</span>
+                    <span class="text-2xl font-bold mt-2">SPF</span>
+                    <p class="mt-2">This product offers NO protection from harmful UV rays.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md col-span-1 md:col-span-2">
+                    <h3 class="font-bold text-xl mb-4">Ingredient Inspector</h3>
+                    <p class="text-gray-600 mb-4">Click on an ingredient to reveal a detailed safety analysis based on regulatory guidance and scientific findings.</p>
+                    <div id="ingredient-list" class="space-y-2"></div>
+                </div>
+
+                 <div class="bg-white p-6 rounded-lg shadow-md col-span-1 md:col-span-3">
+                    <h3 class="font-bold text-xl mb-4">User Feedback: Pros & Cons</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-green-700">Pros 👍</h4>
+                            <ul class="list-disc list-inside mt-2 text-gray-600 space-y-1">
+                                <li>Achieves a deep, dark tan quickly.</li>
+                                <li>Moisturizes skin, leaving it feeling soft.</li>
+                                <li>Long-lasting tan color reported by many.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-red-700">Cons 👎</h4>
+                            <ul class="list-disc list-inside mt-2 text-gray-600 space-y-1">
+                                <li>Stains light-colored clothing and swimwear.</li>
+                                <li>Unpleasant smell in the original carrot formula.</li>
+                                <li>Can give fair skin a yellowish tint.</li>
+                                <li>Offers zero sun protection.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="verdict" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">The Verdict: Health & Safety Risks</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">This section explains the potential dangers of using products without adequate sun protection. Understanding these risks is the first step towards making healthier choices for your skin when enjoying the sun.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="text-5xl mb-4">🔥</div>
+                    <h3 class="font-bold text-xl">Sunburn & Intensified Damage</h3>
+                    <p class="mt-2 text-gray-600">Oils without SPF can act like a magnifying glass, focusing UV rays and dramatically increasing your risk of painful sunburn and deeper cellular damage.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="text-5xl mb-4">👵</div>
+                    <h3 class="font-bold text-xl">Premature Aging (Photoaging)</h3>
+                    <p class="mt-2 text-gray-600">UVA rays, unblocked by this product, destroy collagen, leading to wrinkles, fine lines, and dark spots much earlier in life.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="text-5xl mb-4">🧬</div>
+                    <h3 class="font-bold text-xl">Elevated Skin Cancer Risk</h3>
+                    <p class="mt-2 text-gray-600">Every tan is a sign of DNA damage. The Skin Cancer Foundation confirms that any tanning increases your risk of all forms of skin cancer, including melanoma.</p>
+                </div>
+            </div>
+
+            <div class="mt-12 secondary-bg p-8 rounded-lg">
+                <h3 class="text-2xl font-bold text-center mb-6">What Health Authorities Say</h3>
+                <div class="space-y-6">
+                    <blockquote class="border-l-4 accent-border pl-4">
+                        <p class="text-gray-700 italic">"There is no such thing as a safe or healthy tan. A tan is the skin’s response to injury."</p>
+                        <footer class="text-right mt-2 font-semibold">- The Skin Cancer Foundation</footer>
+                    </blockquote>
+                    <blockquote class="border-l-4 accent-border pl-4">
+                        <p class="text-gray-700 italic">"The AAD recommends a broad-spectrum, water-resistant sunscreen with an SPF of 30 or higher. Do not use tanning oils or lotions that do not contain sunscreen."</p>
+                        <footer class="text-right mt-2 font-semibold">- American Academy of Dermatology (AAD)</footer>
+                    </blockquote>
+                </div>
+            </div>
+        </section>
+
+        <section id="alternatives" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Safer Alternatives: Tinted Sunscreens</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">Get the beach-ready tint you want without the risk. This section presents a curated list of top-rated tinted sunscreens that provide broad-spectrum SPF 30+ protection. Use the tools below to compare products and find the perfect safe and effective option for your skin.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <aside class="lg:col-span-1 bg-white p-6 rounded-lg shadow-md h-fit">
+                    <h3 class="font-bold text-xl mb-4">Filter Products</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="font-semibold text-gray-700">Protection Type</label>
+                            <div class="mt-2 space-y-1" id="type-filter">
+                                <button onclick="filterProducts('type', 'all')" class="filter-btn type-btn active w-full text-left p-2 rounded-md bg-gray-200">All Types</button>
+                                <button onclick="filterProducts('type', 'Mineral')" class="filter-btn type-btn w-full text-left p-2 rounded-md hover:bg-gray-100">Mineral</button>
+                                <button onclick="filterProducts('type', 'Chemical')" class="filter-btn type-btn w-full text-left p-2 rounded-md hover:bg-gray-100">Chemical</button>
+                                <button onclick="filterProducts('type', 'Hybrid')" class="filter-btn type-btn w-full text-left p-2 rounded-md hover:bg-gray-100">Hybrid</button>
+                            </div>
+                        </div>
+                         <div>
+                            <label for="price-filter" class="font-semibold text-gray-700">Max Price: $<span id="price-value">60</span></label>
+                            <input type="range" id="price-filter" min="15" max="60" value="60" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-bg" oninput="filterProducts('price', this.value)">
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="lg:col-span-3">
+                    <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 bg-white p-6 rounded-lg shadow-md">
+                 <h3 class="text-2xl font-bold text-center mb-6">Price & SPF Comparison</h3>
+                 <div class="chart-container">
+                     <canvas id="alternativesChart"></canvas>
+                 </div>
+                 <p class="text-center text-gray-600 mt-4">This chart provides a quick visual comparison of the approximate price and SPF level for each recommended alternative, helping you balance cost and protection.</p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="mt-16 border-t py-8">
+        <div class="container mx-auto px-4 text-center text-gray-500">
+            <p>This interactive guide is for informational purposes only and does not constitute medical advice. Always consult with a dermatologist for personal skincare recommendations.</p>
+            <p class="mt-2 text-sm">Application created based on an expert evaluation report.</p>
+        </div>
+    </footer>
+
+    <script>
+        const ingredientsData = [
+            { name: 'L-Tyrosine', detail: 'Claimed to accelerate tanning. The US FDA considers products with this claim to be unapproved new drugs with no proven safety or efficacy. The American Cancer Society notes they may be dangerous.' },
+            { name: 'Henna', detail: 'Used as a colorant. The US FDA has NOT approved henna for direct skin application (only for hair dye). Risks include allergic reactions and potential contamination with dangerous substances like PPD ("black henna") or heavy metals.' },
+            { name: 'Mineral Oil & Petrolatum', detail: 'Petroleum-based emollients. They create a moisture barrier but can be occlusive, potentially clogging pores in some individuals. Purity is key; cosmetic-grade is considered safe but offers no nutritional value to the skin.' },
+            { name: 'Ceteareth-20', detail: 'An emulsifier. It should not be used on damaged or broken skin as it may cause irritation. Can be comedogenic (pore-clogging) for certain skin types.' },
+            { name: 'Perfume (Fragrance)', detail: 'An undisclosed mix of scent chemicals. A common cause of skin sensitization and allergic contact dermatitis.' }
+        ];
+
+        const productsData = [
+            {
+                name: 'EltaMD UV Clear Tinted',
+                spf: 46,
+                type: 'Hybrid',
+                price: 45,
+                bestFor: ['Sensitive', 'Acne-Prone'],
+                pros: ['Lightweight', 'Calms skin with Niacinamide', 'Non-greasy'],
+                cons: ['Tint can be dark/orange for very fair skin', 'Some report pump issues'],
+                image: 'https://placehold.co/600x400/F4F1DE/3D405B?text=EltaMD'
+            },
+            {
+                name: 'CeraVe Hydrating Mineral Tinted',
+                spf: 30,
+                type: 'Mineral',
+                price: 15,
+                bestFor: ['Sensitive', 'Dry', 'Budget'],
+                pros: ['Affordable', 'Gentle mineral formula', 'Contains ceramides & niacinamide'],
+                cons: ['Can pill under makeup for some', 'Tint may be too light for some complexions'],
+                image: 'https://placehold.co/600x400/F4F1DE/3D405B?text=CeraVe'
+            },
+            {
+                name: 'Supergoop! Glowscreen',
+                spf: 40,
+                type: 'Chemical',
+                price: 38,
+                bestFor: ['Glowy Finish', 'Dry to Normal'],
+                pros: ['Gives a radiant, pearlescent finish', 'Works well as a primer', 'Hydrating'],
+                cons: ['Can be too shimmery for some', 'May cause eye irritation', 'Chemical filters'],
+                image: 'https://placehold.co/600x400/F4F1DE/3D405B?text=Supergoop!'
+            },
+            {
+                name: 'Tower 28 SunnyDays Foundation',
+                spf: 30,
+                type: 'Mineral',
+                price: 32,
+                bestFor: ['Sensitive', 'Eczema-Prone'],
+                pros: ['National Eczema Association seal', 'Excellent for sensitive skin', 'Wide shade range'],
+                cons: ['Light coverage', 'Must use a lot for full SPF protection'],
+                image: 'https://placehold.co/600x400/F4F1DE/3D405B?text=Tower+28'
+            },
+            {
+                name: 'La Roche-Posay Anthelios Mineral',
+                spf: 50,
+                type: 'Mineral',
+                price: 35,
+                bestFor: ['Sensitive', 'High SPF'],
+                pros: ['Very high SPF 50', 'Light fluid texture', 'Water-resistant (40 mins)'],
+                cons: ['Shade matching can be difficult', 'Can feel slightly greasy to some'],
+                image: 'https://placehold.co/600x400/F4F1DE/3D405B?text=La+Roche-Posay'
+            },
+        ];
+
+        let currentFilters = {
+            type: 'all',
+            price: 60
+        };
+        
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('onclick').includes(sectionId)) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        function toggleIngredient(element) {
+            const detail = element.nextElementSibling;
+            if (detail.style.maxHeight) {
+                detail.style.maxHeight = null;
+                element.querySelector('span').textContent = '+';
+            } else {
+                detail.style.maxHeight = detail.scrollHeight + "px";
+                element.querySelector('span').textContent = '−';
+            }
+        }
+
+        function createIngredientList() {
+            const listContainer = document.getElementById('ingredient-list');
+            listContainer.innerHTML = '';
+            ingredientsData.forEach(ing => {
+                const item = document.createElement('div');
+                item.innerHTML = `
+                    <div onclick="toggleIngredient(this)" class="flex justify-between items-center p-3 secondary-bg rounded-md cursor-pointer hover:bg-gray-200">
+                        <h4 class="font-semibold">${ing.name}</h4>
+                        <span class="text-xl font-light accent-text">+</span>
+                    </div>
+                    <div class="ingredient-detail px-3 pt-0 pb-3 bg-gray-50 rounded-b-md">
+                        <p class="text-gray-600 mt-2">${ing.detail}</p>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+        
+        function renderProducts() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+
+            const filteredProducts = productsData.filter(p => {
+                const typeMatch = currentFilters.type === 'all' || p.type === currentFilters.type;
+                const priceMatch = p.price <= currentFilters.price;
+                return typeMatch && priceMatch;
+            });
+
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = `<p class="md:col-span-2 text-center text-gray-500">No products match your criteria. Try adjusting the filters.</p>`;
+                return;
+            }
+
+            filteredProducts.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-md overflow-hidden flex flex-col';
+                card.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}" class="w-full h-40 object-cover">
+                    <div class="p-4 flex flex-col flex-grow">
+                        <h4 class="text-lg font-bold">${product.name}</h4>
+                        <div class="flex items-baseline mt-1 text-sm text-gray-500">
+                            <span class="font-semibold accent-text mr-2">SPF ${product.spf}</span> |
+                            <span class="mx-2">${product.type}</span> |
+                            <span class="ml-2 font-semibold">$${product.price}</span>
+                        </div>
+                        <div class="mt-4">
+                            <p class="font-semibold text-sm">✓ Pros:</p>
+                            <ul class="list-disc list-inside text-xs text-gray-600">
+                                ${product.pros.map(p => `<li>${p}</li>`).join('')}
+                            </ul>
+                        </div>
+                         <div class="mt-2">
+                            <p class="font-semibold text-sm">✗ Cons:</p>
+                            <ul class="list-disc list-inside text-xs text-gray-600">
+                                ${product.cons.map(c => `<li>${c}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="mt-auto pt-4">
+                             <a href="#" class="block text-center accent-bg text-white font-bold py-2 px-4 rounded-md hover:opacity-90 transition-opacity">View Product</a>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterProducts(filterType, value) {
+            if (filterType === 'type') {
+                currentFilters.type = value;
+                document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('bg-gray-200'));
+                event.target.classList.add('bg-gray-200');
+            } else if (filterType === 'price') {
+                currentFilters.price = parseInt(value);
+                document.getElementById('price-value').textContent = value;
+            }
+            renderProducts();
+        }
+
+        function createChart() {
+            const ctx = document.getElementById('alternativesChart').getContext('2d');
+            const sortedProducts = [...productsData].sort((a,b) => a.price - b.price);
+            
+            const labels = sortedProducts.map(p => p.name);
+            const prices = sortedProducts.map(p => p.price);
+            const spfs = sortedProducts.map(p => p.spf);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Price (USD)',
+                            data: prices,
+                            backgroundColor: '#E07A5F',
+                            borderColor: '#E07A5F',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'SPF',
+                            data: spfs,
+                            backgroundColor: '#84A98C',
+                            borderColor: '#84A98C',
+                            borderWidth: 1,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.dataset.label === 'Price (USD)') {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    } else {
+                                        label += context.parsed.y;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    return label.length > 15 ? label.substring(0, 15) + '...' : label;
+                                }
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Price (USD)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'SPF Level'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('investigation');
+            createIngredientList();
+            renderProducts();
+            createChart();
+            
+            const priceSlider = document.getElementById('price-filter');
+            priceSlider.addEventListener('input', (event) => {
+                 document.getElementById('price-value').textContent = event.target.value;
+            });
+             priceSlider.addEventListener('change', (event) => {
+                 filterProducts('price', event.target.value);
+            });
+        });
+
+    </script>
+</body>
+</html>
